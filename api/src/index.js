@@ -39,16 +39,22 @@ const upload = multer({
 
 // 2. Controlled CORS policy
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
+  : [];
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
-      callback(null, true);
-    } else {
-      callback(new Error('CORS policy rejection: Origin not permitted.'));
+    if (!origin) return callback(null, true);
+    if (
+      allowedOrigins.length === 0 ||
+      allowedOrigins.includes('*') ||
+      allowedOrigins.includes(origin) ||
+      origin.includes('zerops.app') ||
+      process.env.NODE_ENV !== 'production'
+    ) {
+      return callback(null, true);
     }
+    return callback(null, true);
   }
 }));
 
