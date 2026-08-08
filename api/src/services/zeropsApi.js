@@ -4,10 +4,10 @@
  */
 
 export async function deployToZerops(zeropsYaml, apiToken, options = {}) {
-  const token = apiToken || process.env.ZEROPS_API_TOKEN;
+  const token = apiToken || process.env.ZER_API_TOKEN || process.env.ZEROPS_API_TOKEN;
 
   if (!token) {
-    throw new Error('ZEROPS_API_TOKEN is missing. Please set ZEROPS_API_TOKEN in environment variables or provide a valid Zerops API token.');
+    throw new Error('ZER_API_TOKEN or ZEROPS_API_TOKEN is missing. Please set ZER_API_TOKEN in environment variables or provide a valid Zerops API token.');
   }
 
   // Official Zerops REST API Base URL: https://api.app-prg1.zerops.io/api/rest/public

@@ -43,7 +43,7 @@ zerops:
         PORT: "4000"
         NODE_ENV: "production"
         DATABASE_URL: "${db_connectionString}"
-        ZEROPS_API_TOKEN: "${ZEROPS_API_TOKEN}"
+        ZER_API_TOKEN: "${ZER_API_TOKEN}"
         LLM_API_KEY: "${LLM_API_KEY}"
         GITHUB_TOKEN: "${GITHUB_TOKEN}"
       start: cd api && npm run start

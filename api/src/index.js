@@ -604,10 +604,10 @@ app.post('/api/deploy/:id?', async (req, res) => {
       return res.status(400).json({ error: 'No zerops.yaml provided or analysis record not found.' });
     }
 
-    const token = zeropsToken || process.env.ZEROPS_API_TOKEN;
+    const token = zeropsToken || process.env.ZER_API_TOKEN || process.env.ZEROPS_API_TOKEN;
     if (!token) {
       return res.status(400).json({
-        error: 'ZEROPS_API_TOKEN environment variable or user API token is required for one-click deployment.'
+        error: 'ZER_API_TOKEN or ZEROPS_API_TOKEN environment variable or user API token is required for one-click deployment.'
       });
     }
 
