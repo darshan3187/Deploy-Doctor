@@ -19,18 +19,24 @@ export async function fetchGitHubRepoDetails(owner, repo, token = process.env.GI
     'User-Agent': 'DeployDoctor-App',
     'Accept': 'application/vnd.github.v3+json',
   };
-  if (token) {
-    headers['Authorization'] = `token ${token}`;
+  const cleanToken = token ? token.trim() : '';
+  if (cleanToken && !cleanToken.includes('your_') && !cleanToken.startsWith('${')) {
+    headers['Authorization'] = `token ${cleanToken}`;
   }
 
   // 1. Fetch repository metadata
-  const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers });
+  let repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers });
+  if (repoRes.status === 401 && headers['Authorization']) {
+    delete headers['Authorization'];
+    repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers });
+  }
+
   if (!repoRes.ok) {
     const err = new Error(
       repoRes.status === 404
         ? `Repository '${owner}/${repo}' not found or is private.`
         : repoRes.status === 403 || repoRes.status === 429
-        ? `GitHub API rate limit exceeded (HTTP ${repoRes.status}). Please try again in a few minutes or provide a GITHUB_TOKEN.`
+        ? `GitHub API rate limit exceeded (HTTP ${repoRes.status}). Please try again in a few minutes or provide a valid GITHUB_TOKEN.`
         : `GitHub API error: ${repoRes.status} ${repoRes.statusText}`
     );
     err.status = repoRes.status;
@@ -44,10 +50,17 @@ export async function fetchGitHubRepoDetails(owner, repo, token = process.env.GI
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 6000);
-    const treeRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${defaultBranch}?recursive=1`, { 
+    let treeRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${defaultBranch}?recursive=1`, { 
       headers, 
       signal: controller.signal 
     });
+    if (treeRes.status === 401 && headers['Authorization']) {
+      delete headers['Authorization'];
+      treeRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${defaultBranch}?recursive=1`, { 
+        headers, 
+        signal: controller.signal 
+      });
+    }
     clearTimeout(timer);
     if (treeRes.ok) {
       const treeData = await treeRes.json();
@@ -56,7 +69,11 @@ export async function fetchGitHubRepoDetails(owner, repo, token = process.env.GI
   } catch (e) {
     // Fallback to /contents/ for massive repositories
     try {
-      const contentsRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents`, { headers });
+      let contentsRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents`, { headers });
+      if (contentsRes.status === 401 && headers['Authorization']) {
+        delete headers['Authorization'];
+        contentsRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents`, { headers });
+      }
       if (contentsRes.ok) {
         const contentsData = await contentsRes.json();
         const rootItems = Array.isArray(contentsData) ? contentsData : [];
