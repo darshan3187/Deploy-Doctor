@@ -57,12 +57,7 @@ export default function Home() {
   useEffect(() => {
     async function fetchRecent() {
       try {
-        let res;
-        try {
-          res = await fetch('/api/analyses');
-        } catch (e) {
-          res = await fetch('http://localhost:4000/api/analyses');
-        }
+        const res = await fetch('/api/analyses');
         if (res.ok) {
           const data = await res.json();
           setRecentAnalyses(data);
@@ -90,20 +85,11 @@ export default function Home() {
     const stepInterval = startStepAnimation();
 
     try {
-      let res;
-      try {
-        res = await fetch('/api/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ repoUrl: repoUrl.trim() }),
-        });
-      } catch (e) {
-        res = await fetch('http://localhost:4000/api/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ repoUrl: repoUrl.trim() }),
-        });
-      }
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repoUrl: repoUrl.trim() }),
+      });
 
       clearInterval(stepInterval);
 
@@ -130,7 +116,6 @@ export default function Home() {
     const stepInterval = startStepAnimation();
 
     try {
-      let res;
       const formData = new FormData();
       if (dockerfileFile) {
         formData.append('file', dockerfileFile);
@@ -138,17 +123,10 @@ export default function Home() {
         formData.append('dockerfileContent', dockerfileText);
       }
 
-      try {
-        res = await fetch('/api/analyze-dockerfile', {
-          method: 'POST',
-          body: formData,
-        });
-      } catch (e) {
-        res = await fetch('http://localhost:4000/api/analyze-dockerfile', {
-          method: 'POST',
-          body: formData,
-        });
-      }
+      const res = await fetch('/api/analyze-dockerfile', {
+        method: 'POST',
+        body: formData,
+      });
 
       clearInterval(stepInterval);
 
@@ -175,21 +153,13 @@ export default function Home() {
     const stepInterval = startStepAnimation();
 
     try {
-      let res;
       const formData = new FormData();
       formData.append('file', zipFile);
 
-      try {
-        res = await fetch('/api/analyze-zip', {
-          method: 'POST',
-          body: formData,
-        });
-      } catch (e) {
-        res = await fetch('http://localhost:4000/api/analyze-zip', {
-          method: 'POST',
-          body: formData,
-        });
-      }
+      const res = await fetch('/api/analyze-zip', {
+        method: 'POST',
+        body: formData,
+      });
 
       clearInterval(stepInterval);
 
@@ -216,20 +186,11 @@ export default function Home() {
     setFixResult(null);
 
     try {
-      let res;
-      try {
-        res = await fetch('/api/fix', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ zeropsYaml: brokenYaml, buildLog }),
-        });
-      } catch (e) {
-        res = await fetch('http://localhost:4000/api/fix', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ zeropsYaml: brokenYaml, buildLog }),
-        });
-      }
+      const res = await fetch('/api/fix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ zeropsYaml: brokenYaml, buildLog }),
+      });
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));

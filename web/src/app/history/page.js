@@ -26,13 +26,8 @@ export default function HistoryPage() {
     async function loadHistory() {
       setLoading(true);
       try {
-        let res;
         const qParam = searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : '';
-        try {
-          res = await fetch(`/api/analyses${qParam}`);
-        } catch (e) {
-          res = await fetch(`http://localhost:4000/api/analyses${qParam}`);
-        }
+        const res = await fetch(`/api/analyses${qParam}`);
         if (res.ok) {
           const data = await res.json();
           setAnalyses(data);
@@ -58,12 +53,7 @@ export default function HistoryPage() {
     if (!confirm('Are you sure you want to delete this analysis record?')) return;
 
     try {
-      let res;
-      try {
-        res = await fetch(`/api/analyses/${id}`, { method: 'DELETE' });
-      } catch (err) {
-        res = await fetch(`http://localhost:4000/api/analyses/${id}`, { method: 'DELETE' });
-      }
+      const res = await fetch(`/api/analyses/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setAnalyses(prev => prev.filter(item => item.id !== id));
       }

@@ -2,10 +2,16 @@
 const nextConfig = {
   reactStrictMode: true,
   async rewrites() {
+    let apiUrl = process.env.API_URL || 'http://api:4000';
+    if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
+      apiUrl = `http://${apiUrl}`;
+    }
+    apiUrl = apiUrl.replace(/\/$/, '');
+
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.API_URL || 'http://localhost:4000'}/api/:path*`,
+        destination: `${apiUrl}/api/:path*`,
       },
     ];
   },

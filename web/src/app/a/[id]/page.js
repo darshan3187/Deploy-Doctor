@@ -57,20 +57,11 @@ export default function AnalysisPage({ params: paramsPromise }) {
     setDeployError(null);
     const tokenToUse = (typeof overrideToken === 'string' ? overrideToken : userToken) || undefined;
     try {
-      let res;
-      try {
-        res = await fetch(`/api/deploy/${id}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ zeropsYaml: generatedLiveYaml, setupName: customSetupName, zeropsToken: tokenToUse })
-        });
-      } catch (e) {
-        res = await fetch(`http://localhost:4000/api/deploy/${id}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ zeropsYaml: generatedLiveYaml, setupName: customSetupName, zeropsToken: tokenToUse })
-        });
-      }
+      const res = await fetch(`/api/deploy/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ zeropsYaml: generatedLiveYaml, setupName: customSetupName, zeropsToken: tokenToUse })
+      });
 
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -91,13 +82,7 @@ export default function AnalysisPage({ params: paramsPromise }) {
   useEffect(() => {
     async function fetchAnalysis() {
       try {
-        let res;
-        try {
-          res = await fetch(`/api/analyses/${id}`);
-        } catch (e) {
-          res = await fetch(`http://localhost:4000/api/analyses/${id}`);
-        }
-
+        const res = await fetch(`/api/analyses/${id}`);
         if (!res.ok) {
           throw new Error('Analysis not found or server error');
         }
