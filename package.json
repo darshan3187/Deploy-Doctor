@@ -1,0 +1,20 @@
+{
+  "name": "deploy-doctor",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "npm run build --prefix web && npm run build --prefix api",
+    "start": "npm run start --prefix web",
+    "start:api": "npm run start --prefix api",
+    "dev:web": "npm run dev --prefix web",
+    "dev:api": "npm run dev --prefix api",
+    "test": "npm run test --prefix api"
+  },
+  "workspaces": [
+    "web",
+    "api"
+  ],
+  "dependencies": {
+    "adm-zip": "^0.6.0"
+  }
+}

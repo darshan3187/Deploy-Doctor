@@ -1,0 +1,55 @@
+zerops:
+  - setup: web
+    build:
+      base: nodejs@22
+      buildCommands:
+        - cd web && npm ci
+        - cd web && npm run build
+      deployFiles:
+        - web/.next
+        - web/public
+        - web/package.json
+        - web/package-lock.json
+        - web/next.config.js
+        - web/node_modules
+      cache: web/node_modules
+    run:
+      base: nodejs@22
+      ports:
+        - port: 3000
+          httpSupport: true
+      envVariables:
+        PORT: "3000"
+        NODE_ENV: "production"
+        API_URL: "${api_apiUrl}"
+      start: cd web && npm run start
+
+  - setup: api
+    build:
+      base: nodejs@22
+      buildCommands:
+        - cd api && npm ci
+        - cd api && npm prune --omit=dev
+      deployFiles:
+        - api/src
+        - api/package.json
+        - api/package-lock.json
+        - api/node_modules
+      cache: api/node_modules
+    run:
+      base: nodejs@22
+      ports:
+        - port: 4000
+          httpSupport: true
+      envVariables:
+        PORT: "4000"
+        NODE_ENV: "production"
+        DATABASE_URL: "${db_connectionString}"
+        ZEROPS_API_TOKEN: "${ZEROPS_API_TOKEN}"
+        LLM_API_KEY: "${LLM_API_KEY}"
+        GITHUB_TOKEN: "${GITHUB_TOKEN}"
+      start: cd api && npm run start
+
+  - setup: db
+    run:
+      base: postgresql@16

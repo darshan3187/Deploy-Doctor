@@ -1,0 +1,21 @@
+{
+  "name": "deploydoctor-api",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "start:api": "node src/index.js",
+    "dev": "node --watch-path=src src/index.js",
+    "build": "echo 'API build completed'",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "adm-zip": "^0.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "multer": "^2.2.0",
+    "pg": "^8.13.0"
+  }
+}
