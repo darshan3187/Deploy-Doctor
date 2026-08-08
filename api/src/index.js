@@ -433,16 +433,42 @@ app.post('/api/fix', async (req, res) => {
       });
     }
 
-    // Issue check 3: Missing start script error in log
-    if (logStr.includes('npm err! missing script: start') || logStr.includes('no start script')) {
-      fixedYaml = fixedYaml.replace(/start:\s*npm run start/gi, 'start: node index.js');
+    // Issue check 3: Missing or invalid start script in log or YAML (e.g. "start: npm xx")
+    if (
+      logStr.includes('npm err! missing script: start') ||
+      logStr.includes('no start script') ||
+      /start:\s*npm\s+(?!run\s|start\b|node\b|dev\b|serve\b)[a-z0-9_-]+/i.test(fixedYaml) ||
+      /start:\s*(npm xx|node\s*$|python\s*$)/i.test(fixedYaml)
+    ) {
+      fixedYaml = fixedYaml.replace(/start:\s*.*/gi, 'start: npm start');
       issues.push({
-        title: 'npm ERR! missing script: start',
-        explanation: "Fallback start command updated from 'npm run start' to 'node index.js'."
+        title: 'Invalid or missing start command (e.g. start: npm xx)',
+        explanation: "Updated start command to standard production start script 'npm start'."
       });
     }
 
-    // Issue check 4: Out of memory / ELIFECYCLE
+    // Issue check 4: Duplicate 'ports:' key in YAML
+    if ((fixedYaml.match(/ports:/g) || []).length > 1) {
+      fixedYaml = fixedYaml.replace(/ports:\s*\n(\s*- port:[^\n]*\n\s*httpSupport:[^\n]*\n?)+/gi, '');
+      if (!fixedYaml.includes('ports:')) {
+        fixedYaml = fixedYaml.replace(/run:\n\s*base:[^\n]*/i, (match) => `${match}\n      ports:\n        - port: 3000\n          httpSupport: true`);
+      }
+      issues.push({
+        title: 'Duplicate YAML keys in run specification',
+        explanation: 'Cleaned duplicate ports declaration blocks to enforce valid Zerops YAML syntax.'
+      });
+    }
+
+    // Issue check 5: Unoptimized deployFiles: ./
+    if (fixedYaml.includes('deployFiles: ./') || fixedYaml.includes('deployFiles: .')) {
+      fixedYaml = fixedYaml.replace(/deployFiles:\s*\.[\/]?/gi, 'deployFiles:\n        - dist\n        - package.json\n        - node_modules');
+      issues.push({
+        title: 'Unoptimized deployFiles root directory',
+        explanation: "Replaced blanket root directory upload './' with targeted production build artifacts."
+      });
+    }
+
+    // Issue check 6: Out of memory / ELIFECYCLE
     if (logStr.includes('javascript heap out of memory') || logStr.includes('err_child_process_stdio_maxbuffer')) {
       issues.push({
         title: 'Build Out of Memory (OOM)',
