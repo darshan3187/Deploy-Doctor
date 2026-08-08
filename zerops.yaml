@@ -3,15 +3,15 @@ zerops:
     build:
       base: nodejs@22
       buildCommands:
-        - cd web && npm install
-        - cd web && npm run build
+        - npm install
+        - npm run build --prefix web
       deployFiles:
         - web/.next
         - web/public
         - web/package.json
         - web/next.config.js
-        - web/node_modules
-      cache: web/node_modules
+        - node_modules
+      cache: node_modules
     run:
       base: nodejs@22
       ports:
@@ -27,14 +27,13 @@ zerops:
     build:
       base: nodejs@22
       buildCommands:
-        - cd api && npm install
-        - cd api && npm prune --omit=dev
+        - npm install
+        - npm prune --omit=dev
       deployFiles:
         - api/src
         - api/package.json
-        - api/package-lock.json
-        - api/node_modules
-      cache: api/node_modules
+        - node_modules
+      cache: node_modules
     run:
       base: nodejs@22
       ports:
@@ -52,3 +51,4 @@ zerops:
   - setup: db
     run:
       base: postgresql@16
+
