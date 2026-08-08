@@ -21,7 +21,7 @@ zerops:
         PORT: "3000"
         NODE_ENV: "production"
         API_URL: "${api_apiUrl}"
-      start: cd web && npm run start
+      start: npm run start --prefix web
 
   - setup: api
     build:
@@ -46,7 +46,7 @@ zerops:
         ZER_API_TOKEN: "${ZER_API_TOKEN}"
         LLM_API_KEY: "${LLM_API_KEY}"
         GITHUB_TOKEN: "${GITHUB_TOKEN}"
-      start: cd api && npm run start
+      start: node api/src/index.js
 
   - setup: db
     run:
