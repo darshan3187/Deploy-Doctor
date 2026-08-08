@@ -413,27 +413,63 @@ app.post('/api/fix', async (req, res) => {
     const logStr = buildLog.toLowerCase();
     const yamlStr = zeropsYaml.toLowerCase();
 
-    // Issue check 1: Base image format
-    if (yamlStr.includes('base: node') && !yamlStr.includes('base: nodejs@')) {
-      fixedYaml = fixedYaml.replace(/base:\s*node[^\n]*/gi, 'base: nodejs@22');
+    // Issue check 1: Missing root 'zerops:' key
+    if (fixedYaml && !fixedYaml.trim().startsWith('zerops:')) {
+      const lines = fixedYaml.split('\n');
+      const indented = lines.map(line => line.trim() ? `  ${line}` : '').join('\n');
+      fixedYaml = `zerops:\n${indented}`;
       issues.push({
-        title: 'Invalid base runtime specification',
-        explanation: "Replaced generic 'node' with native Zerops runtime 'nodejs@22'."
+        title: "Missing Root 'zerops:' Key",
+        explanation: "Wrapped service configuration under mandatory top-level 'zerops:' root declaration."
       });
     }
 
-    // Issue check 2: Missing port or httpSupport
-    if (!yamlStr.includes('ports:') || !yamlStr.includes('port:')) {
+    // Issue check 2: Base image format
+    if (
+      /base:\s*(node|python|go|php|java|rust|ruby|elixir)(?:[:@][a-z0-9_.-]+)?/i.test(fixedYaml) &&
+      !/base:\s*(nodejs@|python@|go@|php@|java@|rust@|ruby@|elixir@)/i.test(fixedYaml)
+    ) {
+      fixedYaml = fixedYaml
+        .replace(/base:\s*node[^\n]*/gi, 'base: nodejs@22')
+        .replace(/base:\s*python[^\n]*/gi, 'base: python@3.12')
+        .replace(/base:\s*go[^\n]*/gi, 'base: go@1.22')
+        .replace(/base:\s*php[^\n]*/gi, 'base: php@8.3')
+        .replace(/base:\s*java[^\n]*/gi, 'base: java@21')
+        .replace(/base:\s*rust[^\n]*/gi, 'base: rust@1.77')
+        .replace(/base:\s*ruby[^\n]*/gi, 'base: ruby@3.3')
+        .replace(/base:\s*elixir[^\n]*/gi, 'base: elixir@1.16');
+
+      issues.push({
+        title: 'Invalid Base Runtime Image',
+        explanation: 'Replaced non-standard runtime image with official Zerops native runtime base.'
+      });
+    }
+
+    // Issue check 3: Duplicate 'ports:' key in YAML
+    if ((fixedYaml.match(/ports:/g) || []).length > 1) {
+      let portsCount = 0;
+      fixedYaml = fixedYaml.replace(/ports:\s*\n(\s*- port:[^\n]*\n\s*httpSupport:[^\n]*\n?)+/gi, (match) => {
+        portsCount++;
+        return portsCount === 1 ? match : '';
+      });
+      issues.push({
+        title: 'Duplicate YAML Keys in Run Section',
+        explanation: 'Deduplicated repeated ports declaration blocks to maintain valid YAML format.'
+      });
+    }
+
+    // Issue check 4: Missing port or httpSupport
+    if (!fixedYaml.includes('ports:') || !fixedYaml.includes('port:')) {
       fixedYaml = fixedYaml.replace(/run:\n\s*base:[^\n]*/i, (match) => {
         return `${match}\n      ports:\n        - port: 3000\n          httpSupport: true`;
       });
       issues.push({
-        title: 'No exposed HTTP port in run configuration',
+        title: 'No Exposed HTTP Port',
         explanation: 'Added port 3000 with httpSupport: true to enable HTTP routing in Zerops.'
       });
     }
 
-    // Issue check 3: Missing or invalid start script in log or YAML (e.g. "start: npm xx")
+    // Issue check 5: Missing or invalid start script in log or YAML (e.g. "start: npm xx")
     if (
       logStr.includes('npm err! missing script: start') ||
       logStr.includes('no start script') ||
@@ -442,33 +478,30 @@ app.post('/api/fix', async (req, res) => {
     ) {
       fixedYaml = fixedYaml.replace(/start:\s*.*/gi, 'start: npm start');
       issues.push({
-        title: 'Invalid or missing start command (e.g. start: npm xx)',
+        title: 'Invalid or Missing Start Command (e.g. start: npm xx)',
         explanation: "Updated start command to standard production start script 'npm start'."
       });
     }
 
-    // Issue check 4: Duplicate 'ports:' key in YAML
-    if ((fixedYaml.match(/ports:/g) || []).length > 1) {
-      fixedYaml = fixedYaml.replace(/ports:\s*\n(\s*- port:[^\n]*\n\s*httpSupport:[^\n]*\n?)+/gi, '');
-      if (!fixedYaml.includes('ports:')) {
-        fixedYaml = fixedYaml.replace(/run:\n\s*base:[^\n]*/i, (match) => `${match}\n      ports:\n        - port: 3000\n          httpSupport: true`);
-      }
-      issues.push({
-        title: 'Duplicate YAML keys in run specification',
-        explanation: 'Cleaned duplicate ports declaration blocks to enforce valid Zerops YAML syntax.'
-      });
-    }
-
-    // Issue check 5: Unoptimized deployFiles: ./
+    // Issue check 6: Unoptimized deployFiles: ./
     if (fixedYaml.includes('deployFiles: ./') || fixedYaml.includes('deployFiles: .')) {
       fixedYaml = fixedYaml.replace(/deployFiles:\s*\.[\/]?/gi, 'deployFiles:\n        - dist\n        - package.json\n        - node_modules');
       issues.push({
-        title: 'Unoptimized deployFiles root directory',
+        title: 'Unoptimized deployFiles Root Directory',
         explanation: "Replaced blanket root directory upload './' with targeted production build artifacts."
       });
     }
 
-    // Issue check 6: Out of memory / ELIFECYCLE
+    // Issue check 7: Forbidden ZEROPS_ prefix in custom environment variables
+    if (/ZEROPS_[A-Z0-9_]+/i.test(fixedYaml)) {
+      fixedYaml = fixedYaml.replace(/ZEROPS_/g, 'ZER_');
+      issues.push({
+        title: "Forbidden 'ZEROPS_' Environment Variable Prefix",
+        explanation: "Renamed environment variables starting with 'ZEROPS_' as this prefix is reserved for Zerops system variables."
+      });
+    }
+
+    // Issue check 8: Out of memory / ELIFECYCLE
     if (logStr.includes('javascript heap out of memory') || logStr.includes('err_child_process_stdio_maxbuffer')) {
       issues.push({
         title: 'Build Out of Memory (OOM)',
