@@ -69,6 +69,9 @@ export default function AnalysisPage({ params: paramsPromise }) {
       }
       setDeployResult(data);
       setShowTokenInput(false);
+      if (typeof window !== 'undefined') {
+        window.open(data.liveUrl || 'https://app.zerops.io', '_blank');
+      }
     } catch (err) {
       setDeployError(err.message);
       if (err.message.includes('token') || err.message.includes('ZEROPS_API_TOKEN') || err.message.includes('required')) {
@@ -323,7 +326,7 @@ zcli push`;
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-[#50e3c2] hover:bg-[#50e3c2]/90 text-black font-bold text-xs rounded-full transition shadow-md shrink-0"
               >
-                <span>{deployResult.liveUrl?.includes('app.zerops.io') ? 'Open Zerops GUI' : 'Open Live App'}</span>
+                <span>Open Zerops Dashboard 🚀</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
