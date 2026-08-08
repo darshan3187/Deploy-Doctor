@@ -3,13 +3,12 @@ zerops:
     build:
       base: nodejs@22
       buildCommands:
-        - cd web && npm ci
+        - cd web && npm install
         - cd web && npm run build
       deployFiles:
         - web/.next
         - web/public
         - web/package.json
-        - web/package-lock.json
         - web/next.config.js
         - web/node_modules
       cache: web/node_modules
@@ -28,7 +27,7 @@ zerops:
     build:
       base: nodejs@22
       buildCommands:
-        - cd api && npm ci
+        - cd api && npm install
         - cd api && npm prune --omit=dev
       deployFiles:
         - api/src
